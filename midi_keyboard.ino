@@ -37,7 +37,7 @@ int pins_rows[NUMROWS] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 25, 26, 27, 28
 // --> rows is w/o diodes.
 // --> to be read as input.
 // --> our circuit requires these pins to be __pulled-down__
-// --> 2 s/w for 1 key. time difference of the 2 s/w could be used to estimate -> predict the 'velocity'
+// --> 2 s/w for 1 key. time difference of the 2 s/w could be used to estimate & predict the 'velocity'
 
 #define NUMOCTAVES 8
 int pins_oct1[NUMOCTAVES] = {3, 5, 7, 9, 11, 24, 26, 28}; // --> preceeding switches
@@ -54,7 +54,7 @@ void setup()
     digitalWrite(pins_cols[idx], LOW);
   }
 
-  // rows : to be read as input. (PULL_DOWN)
+  // rows : to be read as input. (PULL-DOWN)
   for (int idx = 0; idx < NUMROWS; idx++) {
     pinMode(pins_rows[idx], INPUT_PULLDOWN); // INPUT_PULLDOWN is available, expecially for teensy boards !
   }
@@ -85,23 +85,23 @@ void loop()
 
       // if it is 'changed',
       if (cur_key != keystat[key]) {
-        // if there is room for record this change,
+        // if there is a room to record this change,
         if (n_keychg < MAXCHANGES) {
           // make a memo.
-          keychanges[n_keychg] = (key + 24) * 10 + cur_key; // for example : C4 noteon --> 601 ( == 60*10 + 1)
+          keychanges[n_keychg] = (key + 24) * 10 + cur_key; // for example : C4 note-on --> 601 ( == 60*10 + 1)
           n_keychg++;
           // send MIDI msg.
           if (cur_key == 1) {
             // note 'on'
-            usbMIDI.sendNoteOn((key + 24), 60, 1);
+            usbMIDI.sendNoteOn((key + 24), 60, 1); // velocity == 60, midi-channel == 1
           } else {
             // note 'off'
-            usbMIDI.sendNoteOff((key + 24), 60, 1);
+            usbMIDI.sendNoteOff((key + 24), 60, 1); // velocity == 60, midi-channel == 1
           }
         }
       }
 
-      // okay. good. now, accept the change.
+      // okay. good. now, apply the change.
       keystat[key] = cur_key;
     }
   }
@@ -115,13 +115,13 @@ void loop()
     // }
     // Serial.println();
 
-    // print out the change log.
+    // print out the changes.
     for (int chg = 0; chg < n_keychg; chg++) {
       Serial.print(keychanges[chg]);
       Serial.println();
     }
 
-    //clear 'keychanges' array
+    // clear 'keychanges' array
     for (int idx = 0; idx < MAXCHANGES; idx++) {
       keychanges[idx] = 0;
       n_keychg = 0;
