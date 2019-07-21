@@ -13,3 +13,4 @@
 
 - no velocity support, but you can find relative info.
   - https://github.com/ast/keyboard/blob/master/README.md
+  - https://github.com/ast/keyboard/issues/1
