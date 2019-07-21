@@ -2,11 +2,14 @@
 
 - a hackable midi master keyboard
 
-- studied principles & examples & repos
-  - https://github.com/ast/keyboard/blob/master/README.md
+- the principles
   - http://blog.komar.be/how-to-make-a-keyboard-the-matrix/
 
-- took a keybed from old 'Miditech MIDIPLUS-61'
+- old 'Miditech MIDIPLUS-61'
   ![](miditech-midiplus-61-427542.jpg)
 
-- teensy 3.5
+- only using the 'keybed' + teensy 3.5
+  ![](photo_2019-07-21_19-24-54.jpg)
+
+- no velocity support, but you can find relative info.
+  - https://github.com/ast/keyboard/blob/master/README.md
