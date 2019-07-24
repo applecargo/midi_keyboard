@@ -18,7 +18,7 @@
 - OSC over Serial added, and transmitting Serial over Bluetooth w/ HC-06
   ![](photo_2019-07-24_15-40-03.jpg)
 
-- connecting PD patch added, depends on 'osc', 'comport', 'slip' etc..
-  ![](Screen Shot 2019-07-24 at 4.25.24 PM.png)
-  ![](Screen Shot 2019-07-24 at 4.25.27 PM.png)
-  ![](Screen Shot 2019-07-24 at 4.25.37 PM.png)
+- connecting PD patch added, depends on 'osc', 'comport', 'slip' etc.
+  ![](pd1.png)
+  ![](pd2.png)
+  ![](pd3.png)
