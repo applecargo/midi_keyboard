@@ -5,15 +5,24 @@
 //
 
 //
-// studied principles & examples & repos
-// --> https://github.com/ast/keyboard/blob/master/README.md
-// --> http://blog.komar.be/how-to-make-a-keyboard-the-matrix/
+// INFO-NOTE:
+//  compile this with "USB Type : Serial + MIDI",
+//  even though u won't use MIDI,
+//  not to be blocked by compile error.
 //
 
+// select a protocol
+// --> list of the supported
+enum PROTOCOL { MIDI, OSC };
+// --> choose one ?
+PROTOCOL proto = OSC;
+
 //
-// took a keybed from old 'Miditech MIDIPLUS-61'
-// --> https://medias.audiofanzine.com/images/normal/miditech-midiplus-61-427542.jpg
+#include <OSCBundle.h>
+
 //
+#include <SLIPEncodedSerial.h>
+SLIPEncodedSerial SLIPSerial(Serial1); // use h/w serial pin 0/1
 
 #define NUMKEYS 61
 // --> how many keys are available for this master keyboard
@@ -47,6 +56,11 @@ void setup()
 {
   //
   Serial.begin(115200);
+
+  //
+  if (proto == OSC) {
+    SLIPSerial.begin(57600);
+  }
 
   // cols : to be driven as output. (scanning)
   for (int idx = 0; idx < NUMCOLS; idx++) {
@@ -90,13 +104,28 @@ void loop()
           // make a memo.
           keychanges[n_keychg] = (key + 24) * 10 + cur_key; // for example : C4 note-on --> 601 ( == 60*10 + 1)
           n_keychg++;
-          // send MIDI msg.
-          if (cur_key == 1) {
-            // note 'on'
-            usbMIDI.sendNoteOn((key + 24), 60, 1); // velocity == 60, midi-channel == 1
-          } else {
-            // note 'off'
-            usbMIDI.sendNoteOff((key + 24), 60, 1); // velocity == 60, midi-channel == 1
+          // do communications
+          if (proto == MIDI) {
+            // send MIDI msg.
+            if (cur_key == 1) {
+              // note 'on'
+              usbMIDI.sendNoteOn((key + 24), 60, 1); // velocity == 60, midi-channel == 1
+            } else {
+              // note 'off'
+              usbMIDI.sendNoteOff((key + 24), 60, 1); // velocity == 60, midi-channel == 1
+            }
+          } else if (proto == OSC) {
+            OSCBundle bndl;
+            //NOTE: even though not sure if we can count on this or not,
+            //  following order later become a message happening order in pd patch.
+            //  so, this means.. if we do [routeOSC /pitch /velocity /onoff]
+            //  then, events will happen from right-to-left.
+            bndl.add("/note/onoff").add(cur_key);
+            bndl.add("/note/velocity").add(60);
+            bndl.add("/note/pitch").add(key + 24);
+            SLIPSerial.beginPacket(); // mark the beginning of the OSC Packet
+            bndl.send(SLIPSerial);
+            SLIPSerial.endPacket();
           }
         }
       }
@@ -115,11 +144,11 @@ void loop()
     // }
     // Serial.println();
 
-    // print out the changes.
-    for (int chg = 0; chg < n_keychg; chg++) {
-      Serial.print(keychanges[chg]);
-      Serial.println();
-    }
+    // // print out the changes.
+    // for (int chg = 0; chg < n_keychg; chg++) {
+    //   Serial.print(keychanges[chg]);
+    //   Serial.println();
+    // }
 
     // clear 'keychanges' array
     for (int idx = 0; idx < MAXCHANGES; idx++) {
@@ -129,6 +158,8 @@ void loop()
 
   }
 
-  // discard all incoming MIDI msgs.
-  while (usbMIDI.read()) { }
+  if (proto == MIDI) {
+    // discard all incoming MIDI msgs.
+    while (usbMIDI.read()) { }
+  }
 }
