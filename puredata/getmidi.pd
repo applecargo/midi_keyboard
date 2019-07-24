@@ -1,0 +1,18 @@
+#N canvas 199 515 205 208 10;
+#X obj 104 116 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+1;
+#X obj 30 176 outlet;
+#X obj 10 13 r NOTE;
+#X obj 10 34 unpack f f f;
+#X floatatom 10 55 5 0 0 0 - - -;
+#X obj 64 55 f;
+#X text 56 12 /pitch /velocity /onoff;
+#X obj 10 75 sel \$1;
+#X connect 0 0 1 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 3 2 5 1;
+#X connect 4 0 7 0;
+#X connect 5 0 0 0;
+#X connect 7 0 5 0;
+#X coords 0 -1 1 1 85 33 1 100 100;
