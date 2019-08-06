@@ -120,6 +120,15 @@ void loop()
             //  following order later become a message happening order in pd patch.
             //  so, this means.. if we do [routeOSC /pitch /velocity /onoff]
             //  then, events will happen from right-to-left.
+            int oncnt = 0;
+            for (int idx = 0; idx < NUMKEYS; idx++) {
+              if (key == idx) {
+                oncnt += cur_key;
+              } else {
+                oncnt += keystat[idx];
+              }
+            }
+            bndl.add("/note/oncnt").add(oncnt);
             bndl.add("/note/onoff").add(cur_key);
             bndl.add("/note/velocity").add(60);
             bndl.add("/note/pitch").add(key + 24);
