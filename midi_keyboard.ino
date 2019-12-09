@@ -4,25 +4,32 @@
 // D. Yi @ 2019 7 19
 //
 
-//
-// INFO-NOTE:
-//  compile this with "USB Type : Serial + MIDI",
-//  even though u won't use MIDI,
-//  not to be blocked by compile error.
-//
+//==============<configurations>==============
+// --> uncomment only 1 set of conf.
+// (1) USB MIDI keyboard using 'teensy MIDI'
+#define PROTOCOL_MIDI // teensy MIDI --> select "USB Type : Serial + MIDI"
+// (2) USB SERIAL keyboard speaking 'OSC over SLIP' protocol
+#define PROTOCOL_OSC_SLIP
+#define SLIP_USBSERIAL
+// (3) Wireless keyboard speaking OSC protocol (HC-06)
+#define PROTOCOL_OSC_SLIP
+#undef SLIP_USBSERIAL
+#define SLIP_HWSERIAL1 // --> h/w serial pin 0/1
+// (4) Wireless keyboard speaking I2C command string over esp8266 MESH
+#define PROTOCOL_I2C_MESH // esp8266 MESH
+//==============</configurations>==============
 
-// select a protocol
-// --> list of the supported
-enum PROTOCOL { MIDI, OSC };
-// --> choose one ?
-PROTOCOL proto = OSC;
-
 //
+#ifdef PROTOCOL_OSC_SLIP
 #include <OSCBundle.h>
-
-//
+#ifdef SLIP_USBSERIAL
+#include <SLIPEncodedUSBSerial.h>
+SLIPEncodedUSBSerial SLIPSerial(Serial);
+#endif
+#ifdef SLIP_HWSERIAL1
 #include <SLIPEncodedSerial.h>
-SLIPEncodedSerial SLIPSerial(Serial1); // use h/w serial pin 0/1
+SLIPEncodedSerial SLIPSerial(Serial1);
+#endif
 
 #define NUMKEYS 61
 // --> how many keys are available for this master keyboard
@@ -54,13 +61,15 @@ int pins_oct2[NUMOCTAVES] = {2, 4, 6, 8, 10, 12, 25, 27}; // --> following switc
 
 void setup()
 {
-  //
-  Serial.begin(115200);
+  #ifdef SLIP_USBSERIAL
+  SLIPSerial.begin(57600);
+  //Beware!! --> Serial.print will damage SLIP communications..
+  #endif
 
-  //
-  if (proto == OSC) {
-    SLIPSerial.begin(57600);
-  }
+  #ifdef SLIP_HWSERIAL1
+  Serial.begin(115200);
+  SLIPSerial.begin(57600);
+  #endif
 
   // cols : to be driven as output. (scanning)
   for (int idx = 0; idx < NUMCOLS; idx++) {
@@ -105,37 +114,38 @@ void loop()
           keychanges[n_keychg] = (key + 24) * 10 + cur_key; // for example : C4 note-on --> 601 ( == 60*10 + 1)
           n_keychg++;
           // do communications
-          if (proto == MIDI) {
-            // send MIDI msg.
-            if (cur_key == 1) {
-              // note 'on'
-              usbMIDI.sendNoteOn((key + 24), 60, 1); // velocity == 60, midi-channel == 1
-            } else {
-              // note 'off'
-              usbMIDI.sendNoteOff((key + 24), 60, 1); // velocity == 60, midi-channel == 1
-            }
-          } else if (proto == OSC) {
-            OSCBundle bndl;
-            //NOTE: even though not sure if we can count on this or not,
-            //  following order later become a message happening order in pd patch.
-            //  so, this means.. if we do [routeOSC /pitch /velocity /onoff]
-            //  then, events will happen from right-to-left.
-            int oncnt = 0;
-            for (int idx = 0; idx < NUMKEYS; idx++) {
-              if (key == idx) {
-                oncnt += cur_key;
-              } else {
-                oncnt += keystat[idx];
-              }
-            }
-            bndl.add("/note/oncnt").add(oncnt);
-            bndl.add("/note/onoff").add(cur_key);
-            bndl.add("/note/velocity").add(60);
-            bndl.add("/note/pitch").add(key + 24);
-            SLIPSerial.beginPacket(); // mark the beginning of the OSC Packet
-            bndl.send(SLIPSerial);
-            SLIPSerial.endPacket();
+          #ifdef PROTOCOL_MIDI
+          // send MIDI msg.
+          if (cur_key == 1) {
+            // note 'on'
+            usbMIDI.sendNoteOn((key + 24), 60, 1);   // velocity == 60, midi-channel == 1
+          } else {
+            // note 'off'
+            usbMIDI.sendNoteOff((key + 24), 60, 1);   // velocity == 60, midi-channel == 1
           }
+          #endif
+          #ifdef PROTOCOL_OSC_SLIP
+          OSCBundle bndl;
+          //NOTE: even though not sure if we can count on this or not,
+          //  following order later become a message happening order in pd patch.
+          //  so, this means.. if we do [routeOSC /pitch /velocity /onoff]
+          //  then, events will happen from right-to-left.
+          int oncnt = 0;
+          for (int idx = 0; idx < NUMKEYS; idx++) {
+            if (key == idx) {
+              oncnt += cur_key;
+            } else {
+              oncnt += keystat[idx];
+            }
+          }
+          bndl.add("/note/oncnt").add(oncnt);
+          bndl.add("/note/onoff").add(cur_key);
+          bndl.add("/note/velocity").add(60);
+          bndl.add("/note/pitch").add(key + 24);
+          SLIPSerial.beginPacket();   // mark the beginning of the OSC Packet
+          bndl.send(SLIPSerial);
+          SLIPSerial.endPacket();
+          #endif
         }
       }
 
@@ -167,8 +177,8 @@ void loop()
 
   }
 
-  if (proto == MIDI) {
-    // discard all incoming MIDI msgs.
-    while (usbMIDI.read()) { }
-  }
+  #ifdef PROTOCOL_MIDI
+  // discard all incoming MIDI msgs.
+  while (usbMIDI.read()) { }
+  #endif
 }
