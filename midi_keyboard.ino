@@ -4,19 +4,21 @@
 // D. Yi @ 2019 7 19
 //
 
+#include <Arduino.h>
+
 //==============<configurations>==============
 // --> uncomment only 1 set of conf.
 // (1) USB MIDI keyboard using 'teensy MIDI'
-#define PROTOCOL_MIDI // teensy MIDI --> select "USB Type : Serial + MIDI"
+//#define PROTOCOL_MIDI // !! select "USB Type : Serial + MIDI" !!
 // (2) USB SERIAL keyboard speaking 'OSC over SLIP' protocol
-#define PROTOCOL_OSC_SLIP
-#define SLIP_USBSERIAL
+//#define PROTOCOL_OSC_SLIP
+//#define SLIP_USBSERIAL // !! select "USB Type : Serial" !!
 // (3) Wireless keyboard speaking OSC protocol (HC-06)
 #define PROTOCOL_OSC_SLIP
 #undef SLIP_USBSERIAL
 #define SLIP_HWSERIAL1 // --> h/w serial pin 0/1
 // (4) Wireless keyboard speaking I2C command string over esp8266 MESH
-#define PROTOCOL_I2C_MESH // esp8266 MESH
+//#define PROTOCOL_I2C_MESH // esp8266 MESH
 //==============</configurations>==============
 
 //
@@ -29,6 +31,7 @@ SLIPEncodedUSBSerial SLIPSerial(Serial);
 #ifdef SLIP_HWSERIAL1
 #include <SLIPEncodedSerial.h>
 SLIPEncodedSerial SLIPSerial(Serial1);
+#endif
 #endif
 
 #define NUMKEYS 61
@@ -61,6 +64,10 @@ int pins_oct2[NUMOCTAVES] = {2, 4, 6, 8, 10, 12, 25, 27}; // --> following switc
 
 void setup()
 {
+  #ifdef PROTOCOL_MIDI
+  Serial.begin(115200);
+  #endif
+
   #ifdef SLIP_USBSERIAL
   SLIPSerial.begin(57600);
   //Beware!! --> Serial.print will damage SLIP communications..
